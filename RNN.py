@@ -59,20 +59,27 @@ def create_dataset(dataset, N=1):
 
 
 # reshape into X=t and Y=t+1
-N = 1
+N = 3
 trainX, trainY = create_dataset(train, N)
 testX, testY = create_dataset(test, N)
 print(len(trainX), len(testX))
 
-# LSTM expects inputs as 3D matrix with dimensions [samples, features, timesteps]
-trainX = numpy.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
-testX  = numpy.reshape(testX,  (testX.shape[0], 1, testX.shape[1]))
+# LSTM expects inputs as 3D matrix with dimensions [samples, timesteps, features]
 
+# Model past observations as separate input features 
+# trainX = numpy.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
+# testX  = numpy.reshape(testX,  (testX.shape[0], 1, testX.shape[1]))
+
+# Model past observations as time steps of the one input feature 
+# (allows number of features to vary with each sample)
+trainX = numpy.reshape(trainX, (trainX.shape[0], trainX.shape[1], 1))
+testX = numpy.reshape(testX, (testX.shape[0], testX.shape[1], 1))
 
 # create and fit the LSTM network
 model = Sequential()                
 model.add(LSTM(4,                        # 4 LSTM blocks or neurons, one layer
-	      input_shape=(1, N))            # 1 input 
+	      #input_shape=(1, N))           # N timesteps, N predictors/features  
+          input_shape=(N, 1))            # N timesteps, N predictors/features 
           )                   
 model.add(Dense(1))                      # output a single prediction 
 
@@ -112,9 +119,11 @@ trainPredictPlot[train_start_idx:train_stop_idx, :] = trainPredict  # populate e
 # shift test predictions forward training_data + N timesteps for plotting (first N values cannot be predicted)
 testPredictPlot = numpy.empty_like(dataset)
 testPredictPlot[:, :] = numpy.nan
-test_start_idx = train_stop_idx + N 
+test_start_idx = train_stop_idx + N
 test_stop_idx = test_start_idx+len(testPredict) 
 testPredictPlot[test_start_idx : test_stop_idx] = testPredict
+
+print(len(dataset), len(trainPredict), len(testPredict), N, len(trainPredict)+N, test_start_idx, test_stop_idx)
 
 # plot baseline and predictions
 plt.plot(scaler.inverse_transform(dataset)) # original data
