@@ -75,10 +75,10 @@ print(len(trainX), len(testX))
 trainX = numpy.reshape(trainX, (trainX.shape[0], trainX.shape[1], 1))
 testX = numpy.reshape(testX, (testX.shape[0], testX.shape[1], 1))
 
-
+batch_size = 1 # number of training samples to work through before the model’s internal parameters are updated.
+n_epochs = 100 # number of complete passes through the training dataset.
 
 # create and fit the LSTM network
-batch_size = 1
 model = Sequential()
 
 # model.add(LSTM(4,                        # 4 LSTM blocks or neurons, one layer
@@ -99,7 +99,6 @@ model.compile(loss='mean_squared_error', # compile the network
 
 
 # Fit model to data 
-n_epochs = 100
 # Normally, the state within the network is reset after each training batch when fitting the model (and each call to the predict function)
 # model.fit(trainX, trainY, 
 #           epochs=n_epochs, batch_size=1,      # train for 100 epochs, batch size 1
