@@ -75,25 +75,55 @@ print(len(trainX), len(testX))
 trainX = numpy.reshape(trainX, (trainX.shape[0], trainX.shape[1], 1))
 testX = numpy.reshape(testX, (testX.shape[0], testX.shape[1], 1))
 
+
+
 # create and fit the LSTM network
-model = Sequential()                
-model.add(LSTM(4,                        # 4 LSTM blocks or neurons, one layer
-	      #input_shape=(1, N))           # N timesteps, N predictors/features  
-          input_shape=(N, 1))            # N timesteps, N predictors/features 
-          )                   
+batch_size = 1
+model = Sequential()
+
+# model.add(LSTM(4,                        # 4 LSTM blocks or neurons, one layer
+# 	      #input_shape=(1, N))           # N timesteps, N predictors/features  
+#           input_shape=(N, 1))           # N timesteps, N predictors/features 
+#           ) 
+
+# statfeul LSTM
+# stacked LSTMs (return sequence must be set to true for all but last layer)
+model.add(LSTM(4, batch_input_shape=(batch_size, N, 1), stateful=True, return_sequences=True))  
+model.add(LSTM(4, batch_input_shape=(batch_size, N, 1), stateful=True, return_sequences=True)) 
+model.add(LSTM(4, batch_input_shape=(batch_size, N, 1), stateful=True))                 
+
 model.add(Dense(1))                      # output a single prediction 
 
 model.compile(loss='mean_squared_error', # compile the network 
 	          optimizer='adam')
 
-model.fit(trainX, trainY, 
-          epochs=50, batch_size=1,      # train for 100 epochs, batch size 1
-          verbose=2) 
+
+# Fit model to data 
+n_epochs = 100
+# Normally, the state within the network is reset after each training batch when fitting the model (and each call to the predict function)
+# model.fit(trainX, trainY, 
+#           epochs=n_epochs, batch_size=1,      # train for 100 epochs, batch size 1
+#           verbose=2) 
+
+
+# LSTM with Memory Between Batches
+# Fine control over when the internal state of the LSTM network is cleared 
+# Can build state over the entire training sequence and even maintain that state if needed to make predictions.
+# batch_size = 1
+# Loop manually gives number of epochs 
+for i in range(n_epochs):                                                                     
+	model.fit(trainX, trainY, 
+	          epochs=1, batch_size=batch_size,     # fit takes one epoch each iteration 
+		      verbose=2, shuffle=False) 
+	model.reset_states()                           # reset states after each exposure to training data 
 
 
 # make predictions for Y, based on X
-trainPredict = model.predict(trainX) 
-testPredict = model.predict(testX)
+# trainPredict = model.predict(trainX) 
+# testPredict = model.predict(testX)
+trainPredict = model.predict(trainX, batch_size=batch_size) # stateful LSTM, memory between batches 
+testPredict = model.predict(testX, batch_size=batch_size)
+
 
 # invert predictions to convert back to same units as original, unscaled input
 trainPredict = scaler.inverse_transform(trainPredict) # unscaled predictions, training
